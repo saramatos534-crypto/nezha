@@ -112,17 +112,25 @@ func (m *Service) BeforeSave(tx *gorm.DB) error {
 
 func (m *Service) AfterFind(tx *gorm.DB) error {
 	m.SkipServers = make(map[uint64]bool)
-	if err := json.Unmarshal([]byte(m.SkipServersRaw), &m.SkipServers); err != nil {
-		log.Println("NEZHA>> Service.AfterFind:", err)
-		return nil
+
+	// 修复: 只有当 SkipServersRaw 不是空数组/null 时才解析
+	// 原始代码在 SkipServersRaw 为 "[]" 时会报错 "expected { character for map value"
+	if m.SkipServersRaw != "" && m.SkipServersRaw != "[]" && m.SkipServersRaw != "null" {
+		if err := json.Unmarshal([]byte(m.SkipServersRaw), &m.SkipServers); err != nil {
+			log.Println("NEZHA>> Service.AfterFind SkipServers:", err)
+		}
 	}
 
 	// 加载触发任务列表
-	if err := json.Unmarshal([]byte(m.FailTriggerTasksRaw), &m.FailTriggerTasks); err != nil {
-		return err
+	if m.FailTriggerTasksRaw != "" && m.FailTriggerTasksRaw != "null" {
+		if err := json.Unmarshal([]byte(m.FailTriggerTasksRaw), &m.FailTriggerTasks); err != nil {
+			log.Println("NEZHA>> Service.AfterFind FailTriggerTasks:", err)
+		}
 	}
-	if err := json.Unmarshal([]byte(m.RecoverTriggerTasksRaw), &m.RecoverTriggerTasks); err != nil {
-		return err
+	if m.RecoverTriggerTasksRaw != "" && m.RecoverTriggerTasksRaw != "null" {
+		if err := json.Unmarshal([]byte(m.RecoverTriggerTasksRaw), &m.RecoverTriggerTasks); err != nil {
+			log.Println("NEZHA>> Service.AfterFind RecoverTriggerTasks:", err)
+		}
 	}
 
 	return nil
