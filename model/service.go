@@ -112,17 +112,25 @@ func (m *Service) BeforeSave(tx *gorm.DB) error {
 
 func (m *Service) AfterFind(tx *gorm.DB) error {
 	m.SkipServers = make(map[uint64]bool)
-	if err := json.Unmarshal([]byte(m.SkipServersRaw), &m.SkipServers); err != nil {
-		log.Println("NEZHA>> Service.AfterFind:", err)
-		return nil
+	
+	// 修复: 只有当 SkipServersRaw 不是空数组时才解析
+	if m.SkipServersRaw != "" && m.SkipServersRaw != "[]" && m.SkipServersRaw != "null" {
+		if err := json.Unmarshal([]byte(m.SkipServersRaw), &m.SkipServers); err != nil {
+			log.Println("NEZHA>> Service.AfterFind SkipServers:", err)
+			// 不返回错误，继续执行
+		}
 	}
 
 	// 加载触发任务列表
-	if err := json.Unmarshal([]byte(m.FailTriggerTasksRaw), &m.FailTriggerTasks); err != nil {
-		return err
+	if m.FailTriggerTasksRaw != "" && m.FailTriggerTasksRaw != "null" {
+		if err := json.Unmarshal([]byte(m.FailTriggerTasksRaw), &m.FailTriggerTasks); err != nil {
+			log.Println("NEZHA>> Service.AfterFind FailTriggerTasks:", err)
+		}
 	}
-	if err := json.Unmarshal([]byte(m.RecoverTriggerTasksRaw), &m.RecoverTriggerTasks); err != nil {
-		return err
+	if m.RecoverTriggerTasksRaw != "" && m.RecoverTriggerTasksRaw != "null" {
+		if err := json.Unmarshal([]byte(m.RecoverTriggerTasksRaw), &m.RecoverTriggerTasks); err != nil {
+			log.Println("NEZHA>> Service.AfterFind RecoverTriggerTasks:", err)
+		}
 	}
 
 	return nil
